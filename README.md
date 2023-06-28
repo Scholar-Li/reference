@@ -309,6 +309,9 @@ Quick Reference
 <a href="https://github.com/Damao2250" title="Damao">
   <img src="https://avatars.githubusercontent.com/u/19251992?v=4" width="42;" alt="Damao"/>
 </a>
+<a href="https://github.com/dasferco" title="Dasferco">
+  <img src="https://avatars.githubusercontent.com/u/92622404?v=4" width="42;" alt="Dasferco"/>
+</a>
 <a href="https://github.com/demigodliu" title="DemigodLiu">
   <img src="https://avatars.githubusercontent.com/u/30372735?v=4" width="42;" alt="DemigodLiu"/>
 </a>
@@ -566,6 +569,7 @@ Quick Reference
 [dadatom.com](https://tools.dadatom.com/reference/)<!--rehype:target=_blank&class=contributing&data-info=👆支持ipv4和ipv6-->
 [zhangyuanqian.top](https://reference.zhangyuanqian.top/)<!--rehype:target=_blank-->
 [sosloli.com](https://ref.sosloli.com)<!--rehype:target=_blank-->
+[chenze.cloud](https://quick.chenze.cloud)<!--rehype:target=_blank-->
 <!--rehype:class=home-card home-links-->
 
 如果你有资源，可以很方便[部署 web 版](https://github.com/jaywcjlove/reference/issues/102#issue-1451649637)，这非常简单，只需要克隆 [gh-pages](https://github.com/jaywcjlove/reference/tree/gh-pages) 分支代码到你的静态服务就可以了，还可以使用 [docker](https://hub.docker.com/r/wcjiang/reference) 快捷部署 web 版。
