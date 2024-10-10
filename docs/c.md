@@ -18,13 +18,13 @@ int main() {
 }
 ```
 
-使用 `gcc` 编译 `hello.c` 文件
+使用 `gcc` 编译 `hello.c` 源文件
 
 ```bash
 $ gcc -o hello hello.c
 ```
 
-运行编译后的二进制文件(`hello`)
+运行编译后的二进制文件可执行文件(`hello`)
 
 ```bash
 $ ./hello
@@ -37,8 +37,11 @@ $ ./hello
 ```c
 int myNum = 15;
 
-int myNum2; // 不赋值，然后再赋值
-myNum2 = 15;
+int myNum2; // 声明变量 myNum2
+// 变量声明后第一次赋值我们称为初始化
+// 如果 初始化 和 赋值 在同一行
+// 那么我们可以直接称为 定义变量 myNum2
+myNum2 = 15; 
 
 int myNum3 = 15;  // myNum3 值为 15
 myNum3 = 10;      // 现在 myNum3 值为 10
@@ -54,6 +57,8 @@ int x = 5, y = 6, z = 50;
 ```
 
 ### 常量 Constants
+
+常量在 C 语言中我们一般理解为不能被改变的值，活用常量与符号常量
 
 ```c
 const int minutesPerHour = 60;
@@ -443,7 +448,7 @@ int* ptr = &myAge;         // 名为 ptr 的指针变量，用于存储 myAge �
 
 printf("%d\n", myAge);     // 输出 myAge (43) 的值
 
-printf("%p\n", \&myAge);   // 输出 myAge 的内存地址（0x7ffe5367e044）
+printf("%p\n", &myAge);   // 输出 myAge 的内存地址（0x7ffe5367e044）
 
 printf("%p\n", ptr);       // 用指针（0x7ffe5367e044）输出myAge的内存地址
 ```
@@ -747,7 +752,8 @@ Carole 和 Debra: 我们爱你！
 ```c
 #include <stdio.h>
 
-#define tokenpaster(n) printf ("token" #n " = %d", token##n)
+#define tokenpaster(n) \
+    printf ("token" #n " = %d", token##n)
 
 int main(void){
   int token34 = 40;
@@ -766,8 +772,9 @@ int main(void){
 #endif
 
 int main(void) {
-  printf("Here is the message: %s\n", MESSAGE);  
-  return 0;
+    printf("信息如下: %s\n", \
+        MESSAGE);  
+    return 0;
 }
 ```
 
@@ -792,8 +799,9 @@ int square(int x) {
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 
 int main(void) {
-   printf("Max between 20 and 10 is %d\n", MAX(10, 20));  
-   return 0;
+    printf("20 到 10 之间的最大值是 %d\n", \
+        MAX(10, 20));  
+    return 0;
 }
 ```
 
@@ -1291,6 +1299,229 @@ void main (){
 }
 // 输出
 // 文件大小: 18 bytes
+```
+
+## C 网络编程
+
+### 网络编程介绍
+
+C使用sockets进行网络通信。包含头文件：
+
+- `#include <sys/socket.h>`: 套接字操作，如创建、绑定和监听套接字
+- `#include <arpa/inet.h>`: IP 地址转换
+- `#include <unistd.h>`: 关闭套接字等
+- `#include <netinet/in.h>`: 网络地址结构定义和相关敞亮
+
+### 创建套接字
+
+网络通信的第一步是创建套接字。套接字是网络通信的基础，通过它可以与远程主机进行数据交换。
+
+#### 服务端
+
+```cpp
+int server_fd, new_socket; // 定义服务器文件描述符和新连接的套接字
+int port = 8080; // 服务器使用的端口号
+
+// 创建套接字文件描述符
+// AF_INET 表示使用 IPv4 协议，SOCK_STREAM 表示使用 TCP 协议，协议参数通常为 0（默认 TCP）
+if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+    perror("socket failed");
+    exit(EXIT_FAILURE);
+}
+```
+
+#### 客户端
+
+```cpp
+int sock = 0;  // 客户端的套接字描述符
+struct sockaddr_in serv_addr;  // 定义服务器地址结构体
+
+// 创建套接字
+if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    perror("Socket creation failed");
+    exit(EXIT_FAILURE);
+}
+```
+
+### 绑定套接字
+
+服务端创建套接字后，需要将其绑定到特定的 IP 地址和端口，以便客户端能够连接。
+
+#### 服务端
+
+```cpp
+struct sockaddr_in address;  // 定义存储地址信息的结构体
+address.sin_family = AF_INET;  // 设置地址族为 IPv4
+address.sin_addr.s_addr = INADDR_ANY;  // 将服务器绑定到所有可用的网络接口（即本机的所有 IP 地址）
+address.sin_port = htons(port);  // 将端口号转换为网络字节序，大端模式
+
+// 将套接字绑定到指定的地址和端口上
+// bind() 将服务器的文件描述符与 IP 地址和端口号进行绑定，以便客户端能够通过该地址和端口访问服务器
+if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
+    perror("bind failed");
+    exit(EXIT_FAILURE);
+}
+```
+
+### 监听和接收连接
+
+服务端在绑定套接字之后，需要进入监听状态，以等待客户端的连接请求。
+
+#### 服务端
+
+```cpp
+// 开始监听客户端连接
+// 监听连接请求
+// listen() 函数将套接字设置为被动模式，准备接收来自客户端的连接请求
+if (listen(server_fd, 3) < 0) {  // 第二个参数 3 表示连接请求的队列大小
+    perror("listen failed");
+    exit(EXIT_FAILURE);
+}
+
+int addrlen = sizeof(address);  // 获取地址结构体的大小
+// accept() 函数会阻塞等待客户端的连接请求，一旦连接请求到来，创建一个新的套接字 new_socket 用于数据传输
+if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
+    perror("accept failed");
+    exit(EXIT_FAILURE);
+}
+```
+
+### 连接到服务端
+
+客户端使用 `connect()` 函数连接到服务器的 IP 地址和端口。
+
+#### 客户端
+
+```cpp
+// 设置服务器地址
+serv_addr.sin_family = AF_INET;  // 设置地址族为 IPv4
+serv_addr.sin_port = htons(port);  // 将端口号转换为网络字节序
+
+// 将 IP 地址转换为二进制并存储在 serv_addr 结构体中
+if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
+    perror("Invalid address/ Address not supported");
+    exit(EXIT_FAILURE);
+}
+
+// 连接服务器
+// connect() 函数将客户端的套接字与服务器的地址绑定，从而建立连接
+if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+    perror("Connection Failed");
+    exit(EXIT_FAILURE);
+}
+```
+
+### 发送和接收数据
+
+一旦连接建立，服务端和客户端可以通过套接字发送和接收数据。
+
+#### 服务端
+
+```cpp
+// 服务端从客户端接收数据
+char buffer[1024] = {0};  // 缓冲区，用于存储接收的数据
+int valread = read(new_socket, buffer, 1024);  // 从客户端读取数据
+printf("Client: %s\n", buffer);  // 打印接收到的客户端数据
+
+// 服务端发送响应数据给客户端
+const char *response = "Hello from server";  // 响应消息
+send(new_socket, response, strlen(response), 0);  // 发送数据到客户端
+printf("Server message sent\n");
+```
+
+#### 客户端
+
+```cpp
+// 客户端发送数据给服务端
+const char *message = "Hello from client";  // 要发送的消息
+send(sock, message, strlen(message), 0);  // 发送数据到服务端
+printf("Client message sent\n");
+
+// 客户端从服务端接收响应数据
+char buffer[1024] = {0};  // 缓冲区，用于存储接收到的数据
+int valread = read(sock, buffer, 1024);  // 读取服务端的响应数据
+printf("Server: %s\n", buffer);  // 打印接收到的服务端数据
+```
+
+### 关闭套接字
+
+完成通信后，双方都应关闭各自的套接字以释放资源。
+
+#### 服务端
+
+```cpp
+// 关闭服务端套接字
+close(new_socket);  // 关闭用于数据传输的客户端套接字
+close(server_fd);   // 关闭服务器的监听套接字
+
+```
+
+#### 客户端
+
+```cpp
+// 关闭客户端套接字
+close(sock);  // 关闭客户端的套接字
+```
+
+## I/O多路复用
+
+### 多路复用介绍
+
+在网络编程中，服务端可以使用 I/O 多路复用 技术，如 `select`、`poll` 或 `epoll`。这些技术允许服务端同时监听多个文件描述符（如套接字），并在其中一个发生事件时进行处理，提升系统效率。包含头文件：
+
+- `#include <sys/select.h>`: 提供 `select`
+- `#include <poll.h>`: 提供 `poll`
+- `#include <sys/epoll.h>`: 提供`epoll`
+
+### 使用select
+
+```c
+fd_set read_fds;  // 定义文件描述符集合
+FD_ZERO(&read_fds);  // 清空集合
+FD_SET(server_socket, &read_fds);  // 将服务端套接字加入集合
+
+int max_fd = server_socket;
+int activity = select(max_fd + 1, &read_fds, NULL, NULL, NULL);  // 等待事件发生
+
+if (activity < 0 && errno != EINTR) {
+    perror("select error");
+}
+```
+
+### 使用poll
+
+```c
+struct pollfd fds[2];  // 定义文件描述符数组
+fds[0].fd = server_socket;
+fds[0].events = POLLIN;  // 监听读事件
+
+int poll_count = poll(fds, 2, -1);  // 等待事件
+
+if (poll_count < 0) {
+    perror("poll error");
+}
+```
+
+### 使用epoll
+
+```c
+int epoll_fd = epoll_create1(0);  // 创建 epoll 文件描述符
+struct epoll_event event;
+event.events = EPOLLIN;
+event.data.fd = server_socket;
+
+if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_socket, &event) == -1) {
+    perror("epoll_ctl failed");
+}
+
+struct epoll_event events[10];  // 事件数组
+int event_count = epoll_wait(epoll_fd, events, 10, -1);  // 等待事件发生
+
+for (int i = 0; i < event_count; i++) {
+    if (events[i].data.fd == server_socket) {
+        // 处理服务端套接字上的事件
+    }
+}
 ```
 
 杂项
